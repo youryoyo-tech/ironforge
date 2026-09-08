@@ -9,14 +9,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix project paths safely
+      - name: Fix project paths and internal page styling
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
           prefix='/ironforge'
+          hero_images={
+            'about':'about-gym-D7Zh5leI.jpg',
+            'trainers':'trainer-1-BSbviYwQ.jpg',
+            'classes':'class-strength-BdV-wzJq.jpg',
+            'gallery':'gallery-1-a-kVUs7e.jpg',
+          }
+          skin='''<style>
+          body{background:hsl(var(--background));color:hsl(var(--foreground));}
+          @media (min-width:1024px){header .shell{max-width:1280px}}
+          main.shell{max-width:1280px}
+          main.shell>section:first-child{position:relative;overflow:hidden;padding:3rem 1.25rem 4rem;border-bottom:1px solid hsl(var(--border));background:linear-gradient(90deg,hsl(var(--background)) 0%,hsl(var(--background)/.94) 55%,hsl(var(--background)/.72) 100%);border-radius:0 0 1rem 1rem}
+          main.shell>section:first-child:before{content:'';position:absolute;inset:0;z-index:0;background-position:center;background-size:cover;opacity:.18;pointer-events:none}
+          main.shell>section:first-child>*{position:relative;z-index:1}
+          main.shell>section:not(:first-child){scroll-margin-top:6rem}
+          main.shell article{transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+          main.shell article:hover{transform:translateY(-4px);border-color:hsl(var(--primary));box-shadow:0 14px 35px hsl(var(--background)/.35)}
+          main.shell h1{letter-spacing:-.02em}
+          main.shell h2{letter-spacing:.01em}
+          main.shell a.bg-primary,main.shell button.bg-primary{box-shadow:0 0 22px hsl(var(--primary)/.22)}
+          footer{margin-top:2rem}
+          </style>'''
           for p in Path('.').rglob('*'):
-              if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.html','.js','.css','.txt'}: continue
+              if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.html','.js','.css','.txt'}:
+                  continue
               try: s=p.read_text(encoding='utf-8')
               except Exception: continue
               old=s
@@ -28,9 +50,18 @@ jobs:
               s=s.replace('href="/"','href="'+prefix+'/"')
               if p.suffix.lower()=='.js':
                   s=re.sub(r'(["\'])assets/', r'\1'+prefix+'/assets/', s)
-                  s=s.replace('basepath:``','basepath:`'+prefix+'`').replace('basepath:""','basepath:"'+prefix+'"')
-              if p.suffix.lower()=='.html' and 'class="reveal' in s:
-                  s=s.replace('</head>','<style>.reveal{opacity:1!important;transform:none!important;visibility:visible!important}</style></head>',1)
+                  s=s.replace('basepath:``','basepath:`'+prefix+'`')
+                  s=s.replace('basepath:""','basepath:"'+prefix+'"')
+              if p.suffix.lower()=='.html':
+                  if 'class="reveal' in s and '.reveal{' not in s:
+                      s=s.replace('</head>','<style>.reveal{opacity:1!important;transform:none!important;visibility:visible!important}</style></head>',1)
+                  if p.as_posix()!='index.html' and 'id="internal-page-skin"' not in s:
+                      extra=skin
+                      route=p.parts[0] if len(p.parts)>1 else ''
+                      img=hero_images.get(route)
+                      if img:
+                          extra=extra.replace('main.shell>section:first-child:before{content:', 'main.shell>section:first-child:before{background-image:url("'+prefix+'/assets/'+img+'");content:')
+                      s=s.replace('</head>',extra.replace('<style>','<style id="internal-page-skin">',1)+'</head>',1)
               if s!=old: p.write_text(s,encoding='utf-8')
           PY
       - name: Commit fixes
@@ -38,4 +69,4 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          if ! git diff --cached --quiet; then git commit -m 'Fix GitHub Pages rendering'; git push; fi
+          if ! git diff --cached --quiet; then git commit -m 'Restore internal page styling'; git push; fi
