@@ -29,7 +29,13 @@ jobs:
               except Exception:
                   continue
               original=s
-              s=re.sub(r'([\"\'])/assets/', r'\1'+prefix+'/assets/', s)
+              # Absolute asset URLs used by HTML/CSS/JS.
+              s=re.sub(r'(["\'])/assets/', r'\1'+prefix+'/assets/', s)
+              # Vite's dependency map stores chunk paths as "assets/foo.js".
+              # Make those project-site absolute too, so dynamic imports don't
+              # resolve to /ironforge/assets/assets/... on GitHub Pages.
+              if p.suffix.lower() == '.js':
+                  s=re.sub(r'(["\'])assets/', r'\1'+prefix+'/assets/', s)
               s=s.replace('href="/favicon.ico"', 'href="'+prefix+'/favicon.ico"')
               for route in ['about','membership','trainers','classes','schedule','gallery','contact','faq']:
                   s=s.replace(f'href="/{route}', f'href="{prefix}/{route}')
@@ -43,5 +49,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git diff --cached --quiet || git commit -m 'Fix GitHub Pages project paths'
+          git diff --cached --quiet || git commit -m 'Fix Vite chunk paths for GitHub Pages'
           git push
