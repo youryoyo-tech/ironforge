@@ -1,70 +1,41 @@
 name: Fix GitHub Pages paths
-
 on:
   push:
     branches: [main]
-
 permissions:
   contents: write
-
 jobs:
   fix-paths:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Fix project-site paths and preserve full static render
+      - uses: actions/checkout@v4
+      - name: Fix project paths safely
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
           prefix='/ironforge'
           for p in Path('.').rglob('*'):
-              if not p.is_file() or '.git' in p.parts:
-                  continue
-              if p.suffix.lower() not in {'.html','.js','.css','.txt'}:
-                  continue
-              try:
-                  s=p.read_text(encoding='utf-8')
-              except Exception:
-                  continue
-              original=s
+              if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.html','.js','.css','.txt'}: continue
+              try: s=p.read_text(encoding='utf-8')
+              except Exception: continue
+              old=s
               s=re.sub(r'(["\'])/assets/', r'\1'+prefix+'/assets/', s)
-              if p.suffix.lower() == '.js':
-                  s=re.sub(r'(["\'])assets/', r'\1'+prefix+'/assets/', s)
-                  s=s.replace('basepath:``', 'basepath:`'+prefix+'`')
-                  s=s.replace('basepath:""', 'basepath:"'+prefix+'"')
-              if p.suffix.lower() == '.html':
-                  s=re.sub(r'<link[^>]+rel=["\']modulepreload["\'][^>]*>', lambda m: m.group(0).replace('/assets/', prefix+'/assets/'), s, flags=re.I)
-                  # The original app uses .reveal until its client observer adds
-                  # .is-revealed. If hydration is interrupted on GitHub Pages,
-                  # keep the server-rendered sections visible instead of leaving
-                  # the middle of the homepage blank.
-                  if '.reveal{' not in s and 'class="reveal' in s:
-                      s=s.replace('</head>', '<style>.reveal{opacity:1!important;transform:none!important;visibility:visible!important}</style></head>', 1)
-                  # Keep the homepage stats meaningful even without the counter effect.
-                  if p.as_posix() == 'index.html':
-                      replacements = {
-                          'Years Experience':'10',
-                          'Members Trained':'2,500',
-                          'Expert Trainers':'12',
-                          'Weekly Classes':'50',
-                      }
-                      for label, value in replacements.items():
-                          pattern = r'(>)(?:0|[0-9,]+)(<!-- -->\+)(</p><p[^>]*>'+re.escape(label)+r'<)'
-                          s=re.sub(pattern, r'\1'+value+r'\2\3', s)
-              s=s.replace('href="/favicon.ico"', 'href="'+prefix+'/favicon.ico"')
+              s=re.sub(r'(["\'])/favicon\.ico', r'\1'+prefix+'/favicon.ico', s)
               for route in ['about','membership','trainers','classes','schedule','gallery','contact','faq']:
                   s=s.replace(f'href="/{route}', f'href="{prefix}/{route}')
                   s=s.replace(f"href='/{route}", f"href='{prefix}/{route}")
-              s=s.replace('href="/"', 'href="'+prefix+'/"')
-              if s != original:
-                  p.write_text(s, encoding='utf-8')
+              s=s.replace('href="/"','href="'+prefix+'/"')
+              if p.suffix.lower()=='.js':
+                  s=re.sub(r'(["\'])assets/', r'\1'+prefix+'/assets/', s)
+                  s=s.replace('basepath:``','basepath:`'+prefix+'`').replace('basepath:""','basepath:"'+prefix+'"')
+              if p.suffix.lower()=='.html' and 'class="reveal' in s:
+                  s=s.replace('</head>','<style>.reveal{opacity:1!important;transform:none!important;visibility:visible!important}</style></head>',1)
+              if s!=old: p.write_text(s,encoding='utf-8')
           PY
       - name: Commit fixes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git diff --cached --quiet || git commit -m 'Restore homepage sections when hydration fails'
-          git push
+          if ! git diff --cached --quiet; then git commit -m 'Fix GitHub Pages rendering'; git push; fi
