@@ -9,64 +9,111 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix project paths and internal page styling
+      - name: Build GitHub Pages version
         run: |
           python - <<'PY'
           from pathlib import Path
           import re
           prefix='/ironforge'
-          hero_images={
-            'about':'about-gym-D7Zh5leI.jpg',
-            'trainers':'trainer-1-BSbviYwQ.jpg',
-            'classes':'class-strength-BdV-wzJq.jpg',
-            'gallery':'gallery-1-a-kVUs7e.jpg',
+
+          pages={
+            'about': {'title':"More than a gym. It's a movement.",'eyebrow':'About','desc':'Ironforge exists for people who want to get genuinely, measurably stronger — with coaches who know their name and a room that expects them back tomorrow.','image':'about-gym-D7Zh5leI.jpg','sections':[('Our story','Built around coaching, consistency and a community that takes training seriously. Ironforge started with a simple idea: make excellent strength training accessible, focused and welcoming.',['Coach-led training','Premium equipment','Capped class sizes','Progress you can measure']),('What we train by','Four principles shape every program, every class and every conversation on the floor.',['Coaching over gimmicks','Everyone re-racks','Progress you can measure','Recovery counts as training']),('Everything under one roof','18,000 square feet of strength, conditioning, boxing, mobility and recovery space.',['11 power racks with calibrated plates','40m turf lane with sleds','Dedicated boxing room','Dark spin studio','Mobility and stretch studio','Sauna, steam and recovery lounge'])]},
+            'membership': {'title':'Memberships built around your goals','eyebrow':'Membership','desc':'Three straightforward plans, no joining fee, and a free fitness assessment with every one of them.','image':'class-pt-B1HTe1ZP.jpg','pricing':[('Basic','$49','Full gym access','Open training floor','Locker rooms'),('Pro','$79','Everything in Basic','Group classes','Training assessment','Guest passes'),('Elite','$129','Everything in Pro','Personal training','Nutrition guidance','Priority booking')],'sections':[('Included with every plan','Start strong from day one.',['Free fitness assessment','No lock-in contract','Guest passes']),('Questions, answered','Simple answers before you join.',['Can beginners join? Yes — coaches help you start at the right level.','Do you offer personal training? Yes — one-on-one coaching is available.','Do I need to book classes? Class schedules and booking are available online.'])]},
+            'trainers': {'title':'Meet the coaches who keep you moving forward','eyebrow':'Trainers','desc':'Experienced coaches, athletes and educators who care about the work as much as you do.','image':'trainer-1-BSbviYwQ.jpg','trainers':[('Marcus Reed','Strength & Conditioning','Strength programming, powerlifting and performance.'),('Nina Alvarez','Boxing & Conditioning','Technical boxing, conditioning and confidence.'),('Jordan Kim','Mobility & Recovery','Movement quality, mobility and sustainable progress.')],'sections':[('The Ironforge standard','Every coach follows the same principle: teach well, listen closely and make the next step clear.',['Individual coaching','Structured programming','Technique-first training','Real accountability'])]},
+            'classes': {'title':'Classes that make hard work addictive','eyebrow':'Classes','desc':'Strength, HIIT, boxing, spin, mobility and more — coached sessions with capped class sizes.','image':'class-strength-BdV-wzJq.jpg','classes':[('Strength','Build strength with progressive barbell and dumbbell work.','class-strength-BdV-wzJq.jpg'),('HIIT','Fast-paced intervals designed to improve conditioning.','class-hiit-DfiIure7.jpg'),('Boxing','Technique, rounds and conditioning in a focused boxing room.','class-boxing-eZnNN75o.jpg'),('Functional','Athletic movement, carries, sleds and practical strength.','class-functional-CQYdgH_8.jpg'),('Spin','High-energy indoor cycling with power-based intervals.','class-spin-C3bgYM1p.jpg'),('Yoga','Mobility, breathing and recovery for better training.','class-yoga-9MWuTFM2.jpg')],'sections':[('Train with purpose','Every class has a clear goal, a capable coach and a room full of people ready to work.',['Capped class sizes','All levels welcome','Coached technique','Progressive sessions'])]},
+            'schedule': {'title':'Find your next session','eyebrow':'Schedule','desc':'Plan your week around coached strength, conditioning, boxing, spin and recovery sessions.','image':'class-hiit-DfiIure7.jpg','schedule':[('MON','6:00 AM','Strength'),('MON','6:00 PM','HIIT'),('TUE','7:00 AM','Boxing'),('TUE','6:30 PM','Functional'),('WED','6:00 AM','Strength'),('WED','7:00 PM','Spin'),('THU','6:30 PM','Boxing'),('FRI','6:00 AM','HIIT'),('SAT','10:00 AM','Strength'),('SUN','11:00 AM','Yoga')],'sections':[('Ready when you are','Classes are coached, focused and built to help you improve — not just get tired.',['Arrive 10 minutes early','Bring water and training shoes','Book ahead for capped sessions','Ask a coach if you are new'])]},
+            'gallery': {'title':'Inside the Ironforge floor','eyebrow':'Gallery','desc':'A look at the training spaces, equipment and atmosphere inside Ironforge Athletic Club.','image':'gallery-1-a-kVUs7e.jpg','gallery':['gallery-1-a-kVUs7e.jpg','gallery-2-DHnz220v.jpg','gallery-3-Bm4giS38.jpg','about-gym-D7Zh5leI.jpg','class-strength-BdV-wzJq.jpg','class-boxing-eZnNN75o.jpg','class-hiit-DfiIure7.jpg','class-pt-B1HTe1ZP.jpg'],'sections':[('A room built for work','Serious equipment, clean lines and enough space to train without feeling crowded.',['Strength floor','Conditioning zone','Boxing room','Recovery spaces'])]},
+            'contact': {'title':'Come train with us','eyebrow':'Contact','desc':'Questions about memberships, classes or personal training? Reach out and the Ironforge team will help.','image':'about-gym-D7Zh5leI.jpg','contact':[('Visit','142 Harrison Street, San Francisco, CA','Mon–Sun · 5:00 AM–11:00 PM'),('Call','(415) 555-0148','Membership & training desk'),('Email','hello@ironforge.example','We usually reply within one business day')],'sections':[('Start with a visit','See the floor, meet the coaches and find the training plan that fits you.',['Tour the facility','Ask about memberships','Book a training assessment'])]},
+            'faq': {'title':'Frequently asked questions','eyebrow':'FAQ','desc':'Straight answers about memberships, classes, coaching and getting started at Ironforge.','image':'class-pt-B1HTe1ZP.jpg','faq':[('Can beginners join?','Absolutely. Coaches can scale movements and help you start at the right level.'),('Do I need to book classes?','Yes for capped sessions. The Schedule page shows the latest class times.'),('Do you offer personal training?','Yes. Ask the training desk about one-on-one coaching and programming.'),('Do you have contracts?','Our memberships are designed to stay simple and flexible.'),('What should I bring?','Training shoes, water and a willingness to work. We provide the rest.')],'sections':[('Still have questions?','Come by the club or contact the team and we will point you in the right direction.',['Visit the club','Call the training desk','Explore memberships'])]},
           }
-          skin='''<style>
-          body{background:hsl(var(--background));color:hsl(var(--foreground));}
-          @media (min-width:1024px){header .shell{max-width:1280px}}
-          main.shell{max-width:1280px}
-          main.shell>section:first-child{position:relative;overflow:hidden;padding:3rem 1.25rem 4rem;border-bottom:1px solid hsl(var(--border));background:linear-gradient(90deg,hsl(var(--background)) 0%,hsl(var(--background)/.94) 55%,hsl(var(--background)/.72) 100%);border-radius:0 0 1rem 1rem}
-          main.shell>section:first-child:before{content:'';position:absolute;inset:0;z-index:0;background-position:center;background-size:cover;opacity:.18;pointer-events:none}
-          main.shell>section:first-child>*{position:relative;z-index:1}
-          main.shell>section:not(:first-child){scroll-margin-top:6rem}
-          main.shell article{transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
-          main.shell article:hover{transform:translateY(-4px);border-color:hsl(var(--primary));box-shadow:0 14px 35px hsl(var(--background)/.35)}
-          main.shell h1{letter-spacing:-.02em}
-          main.shell h2{letter-spacing:.01em}
-          main.shell a.bg-primary,main.shell button.bg-primary{box-shadow:0 0 22px hsl(var(--primary)/.22)}
-          footer{margin-top:2rem}
+
+          css='''<style id="ironforge-internal-style">
+          .if-page{background:hsl(var(--background));color:hsl(var(--foreground));min-height:100vh}
+          .if-page .if-hero{position:relative;isolation:isolate;overflow:hidden;padding:9rem 0 5rem;border-bottom:1px solid hsl(var(--border));background:linear-gradient(90deg,hsl(var(--background)) 0%,hsl(var(--background)/.92) 58%,hsl(var(--background)/.72) 100%)}
+          .if-page .if-hero:before{content:'';position:absolute;inset:0;z-index:-2;background-position:center;background-size:cover;background-image:var(--hero);opacity:.30}
+          .if-page .if-hero:after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,hsl(var(--background)/.98),hsl(var(--background)/.78),hsl(var(--background)/.35))}
+          .if-page .if-wrap{width:100%;max-width:84rem;margin:auto;padding:0 1.25rem}
+          .if-page .if-grid{display:grid;gap:1.25rem}
+          .if-page .if-cards{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+          .if-page .if-card{background:linear-gradient(160deg,hsl(var(--surface)),hsl(var(--background)));border:1px solid hsl(var(--border));border-radius:1rem;padding:1.5rem;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+          .if-page .if-card:hover{transform:translateY(-5px);border-color:hsl(var(--primary));box-shadow:0 18px 45px hsl(var(--background)/.45)}
+          .if-page .if-section{padding:5rem 0}
+          .if-page .if-section:nth-of-type(odd){background:hsl(var(--surface)/.18)}
+          .if-page .if-kicker{font-size:.75rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:hsl(var(--primary))}
+          .if-page .if-title{font-family:var(--font-display);font-size:clamp(3rem,8vw,6.5rem);line-height:.9;text-transform:uppercase;max-width:900px}
+          .if-page .if-h2{font-family:var(--font-display);font-size:clamp(2.2rem,5vw,4.5rem);line-height:.94;text-transform:uppercase}
+          .if-page .if-muted{color:hsl(var(--muted-foreground));line-height:1.7}
+          .if-page .if-btn{display:inline-flex;align-items:center;justify-content:center;background:hsl(var(--primary));color:hsl(var(--primary-foreground));font-weight:800;text-transform:uppercase;letter-spacing:.12em;border-radius:.5rem;padding:.85rem 1.3rem;box-shadow:0 0 24px hsl(var(--primary)/.2)}
+          .if-page .if-img{width:100%;height:240px;object-fit:cover;border-radius:.75rem;margin-bottom:1rem}
+          .if-page .if-price{font-family:var(--font-display);font-size:3rem;line-height:1}
+          .if-page .if-table{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem}
+          .if-page .if-row{padding:1rem;border:1px solid hsl(var(--border));border-radius:.65rem;background:hsl(var(--card))}
+          .if-page .if-nav{border-radius:.5rem;padding:.5rem .75rem;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:hsl(var(--muted-foreground));transition:color .2s ease}
+          .if-page .if-nav:hover,.if-page .if-nav.active{color:hsl(var(--primary))}
+          @media(min-width:768px){.if-page .if-wrap{padding:0 2rem}.if-page .if-hero{padding:10rem 0 7rem}.if-page .if-section{padding:6.5rem 0}.if-page .if-img{height:280px}}
           </style>'''
+
+          def nav(active):
+            links='<a href="/ironforge/" class="if-nav">Home</a>'
+            for r in pages:
+              cls='if-nav active' if r==active else 'if-nav'
+              links+=f'<a href="/ironforge/{r}" class="{cls}">'+r.title()+'</a>'
+            return links
+
+          def make_page(route,d):
+            hero=f'''<section class="if-hero" style="--hero:url(\'{prefix}/assets/{d['image']}\')"><div class="if-wrap"><p class="if-kicker">{d['eyebrow']}</p><h1 class="if-title mt-5">{d['title']}</h1><p class="if-muted mt-6 max-w-2xl text-lg">{d['desc']}</p><a class="if-btn mt-8" href="{prefix}/membership">Join Ironforge</a></div></section>'''
+            body=[]
+            if 'pricing' in d:
+              p=''.join(f'<article class="if-card"><h3 class="font-display text-3xl uppercase">{x[0]}</h3><p class="if-price mt-6">{x[1]}<span class="text-base text-muted-foreground">/mo</span></p><ul class="mt-6 space-y-3 if-muted">'+''.join(f'<li>✓ {v}</li>' for v in x[2:])+f'</ul><a class="if-btn mt-7" href="{prefix}/contact">Get started</a></article>' for x in d['pricing'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><div class="if-grid if-cards">{p}</div></div></section>')
+            if 'trainers' in d:
+              t=''.join(f'<article class="if-card"><img class="if-img" src="{prefix}/assets/trainer-1-BSbviYwQ.jpg" alt="{x[0]}"><h3 class="font-display text-3xl uppercase">{x[0]}</h3><p class="mt-2 text-primary font-bold">{x[1]}</p><p class="if-muted mt-3">{x[2]}</p></article>' for x in d['trainers'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><p class="if-kicker">Our team</p><h2 class="if-h2 mt-3">Coaches who care</h2><div class="if-grid if-cards mt-10">{t}</div></div></section>')
+            if 'classes' in d:
+              c=''.join(f'<article class="if-card"><img class="if-img" src="{prefix}/assets/{x[2]}" alt="{x[0]}"><h3 class="font-display text-3xl uppercase">{x[0]}</h3><p class="if-muted mt-3">{x[1]}</p></article>' for x in d['classes'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><p class="if-kicker">Weekly training</p><h2 class="if-h2 mt-3">Find your class</h2><div class="if-grid if-cards mt-10">{c}</div></div></section>')
+            if 'schedule' in d:
+              rows=''.join(f'<div class="if-row"><strong class="text-primary">{x[0]}</strong><span class="ml-3">{x[1]}</span><p class="font-display text-xl mt-2">{x[2]}</p></div>' for x in d['schedule'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><p class="if-kicker">This week</p><h2 class="if-h2 mt-3">Train on your time</h2><div class="if-table mt-10">{rows}</div></div></section>')
+            if 'gallery' in d:
+              g=''.join(f'<div class="if-card p-2"><img class="w-full h-64 object-cover rounded-lg" src="{prefix}/assets/{x}" alt="Ironforge training space"></div>' for x in d['gallery'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><p class="if-kicker">Inside the club</p><h2 class="if-h2 mt-3">Built for the work</h2><div class="if-grid if-cards mt-10">{g}</div></div></section>')
+            if 'contact' in d:
+              c=''.join(f'<article class="if-card"><p class="if-kicker">{x[0]}</p><h3 class="font-display text-2xl mt-2">{x[1]}</h3><p class="if-muted mt-2">{x[2]}</p></article>' for x in d['contact'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><div class="if-grid if-cards">{c}</div></div></section>')
+            if 'faq' in d:
+              q=''.join(f'<article class="if-card"><h3 class="font-display text-2xl uppercase">{x[0]}</h3><p class="if-muted mt-3">{x[1]}</p></article>' for x in d['faq'])
+              body.append(f'<section class="if-section"><div class="if-wrap"><p class="if-kicker">Need to know</p><h2 class="if-h2 mt-3">Answers, without the fluff</h2><div class="if-grid if-cards mt-10">{q}</div></div></section>')
+            for heading,desc,items in d.get('sections',[]):
+              body.append(f'<section class="if-section"><div class="if-wrap"><p class="if-kicker">Ironforge</p><h2 class="if-h2 mt-3">{heading}</h2><p class="if-muted mt-5 max-w-2xl text-lg">{desc}</p><div class="if-grid if-cards mt-10">'+''.join(f'<article class="if-card"><h3 class="font-display text-2xl uppercase">{i}</h3></article>' for i in items)+f'</div></div></section>')
+            return f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{d['title']} — Ironforge Athletic Club</title><link rel="stylesheet" href="{prefix}/assets/styles-CInjSjIY.css">{css}</head><body><div class="if-page"><header class="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/95"><div class="shell flex items-center justify-between py-4"><a class="flex items-center gap-2.5" href="{prefix}/"><span class="grid size-9 place-items-center rounded-md bg-primary text-primary-foreground">🏋</span><span><span class="block font-display text-xl leading-none tracking-wide">IRONFORGE</span><span class="block text-[0.6rem] font-semibold tracking-[0.28em] text-muted-foreground">ATHLETIC CLUB</span></span></a><nav class="hidden items-center gap-1 lg:flex">{nav(route)}</nav><a class="hidden rounded-md bg-primary px-4 py-2 text-sm font-bold uppercase lg:block" href="{prefix}/membership">Join Now</a></div></header>{hero}{''.join(body)}<section class="if-section"><div class="if-wrap text-center"><h2 class="if-h2">Ready to get stronger?</h2><p class="if-muted mx-auto mt-4 max-w-xl">Come see the floor, meet the coaches and find a plan that fits you.</p><a class="if-btn mt-7" href="{prefix}/membership">View memberships</a></div></section><footer class="border-t border-border py-8"><div class="shell flex flex-col justify-between gap-3 text-sm text-muted-foreground md:flex-row"><span>© Ironforge Athletic Club</span><span>Train hard. Recover well. Repeat.</span></div></footer></div></body></html>'''
+
+          for route,d in pages.items():
+            Path(route).mkdir(exist_ok=True)
+            Path(route,'index.html').write_text(make_page(route,d),encoding='utf-8')
+
           for p in Path('.').rglob('*'):
-              if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.html','.js','.css','.txt'}:
-                  continue
-              try: s=p.read_text(encoding='utf-8')
-              except Exception: continue
-              old=s
-              s=re.sub(r'(["\'])/assets/', r'\1'+prefix+'/assets/', s)
-              s=re.sub(r'(["\'])/favicon\.ico', r'\1'+prefix+'/favicon.ico', s)
-              for route in ['about','membership','trainers','classes','schedule','gallery','contact','faq']:
-                  s=s.replace(f'href="/{route}', f'href="{prefix}/{route}')
-                  s=s.replace(f"href='/{route}", f"href='{prefix}/{route}")
-              s=s.replace('href="/"','href="'+prefix+'/"')
-              if p.suffix.lower()=='.js':
-                  s=re.sub(r'(["\'])assets/', r'\1'+prefix+'/assets/', s)
-                  s=s.replace('basepath:``','basepath:`'+prefix+'`')
-                  s=s.replace('basepath:""','basepath:"'+prefix+'"')
-              if p.suffix.lower()=='.html':
-                  if 'class="reveal' in s and '.reveal{' not in s:
-                      s=s.replace('</head>','<style>.reveal{opacity:1!important;transform:none!important;visibility:visible!important}</style></head>',1)
-                  if p.as_posix()!='index.html' and 'id="internal-page-skin"' not in s:
-                      extra=skin
-                      route=p.parts[0] if len(p.parts)>1 else ''
-                      img=hero_images.get(route)
-                      if img:
-                          extra=extra.replace('main.shell>section:first-child:before{content:', 'main.shell>section:first-child:before{background-image:url("'+prefix+'/assets/'+img+'");content:')
-                      s=s.replace('</head>',extra.replace('<style>','<style id="internal-page-skin">',1)+'</head>',1)
-              if s!=old: p.write_text(s,encoding='utf-8')
+            if not p.is_file() or '.git' in p.parts or p.suffix.lower() not in {'.html','.js','.css','.txt'}:
+              continue
+            try: s=p.read_text(encoding='utf-8')
+            except Exception: continue
+            old=s
+            s=re.sub(r'(["\'])/assets/',r'\1'+prefix+'/assets/',s)
+            s=re.sub(r'(["\'])/favicon\.ico',r'\1'+prefix+'/favicon.ico',s)
+            for route in pages:
+              s=s.replace(f'href="/{route}',f'href="{prefix}/{route}')
+              s=s.replace(f"href='/{route}",f"href='{prefix}/{route}")
+            s=s.replace('href="/"','href="'+prefix+'/"')
+            if p.suffix.lower()=='.js':
+              s=re.sub(r'(["\'])assets/',r'\1'+prefix+'/assets/',s)
+              s=s.replace('basepath:``','basepath:`'+prefix+'`').replace('basepath:""','basepath:"'+prefix+'"')
+            if p.suffix.lower()=='.html' and 'class="reveal' in s and '.reveal{' not in s:
+              s=s.replace('</head>','<style>.reveal{opacity:1!important;transform:none!important;visibility:visible!important}</style></head>',1)
+            if s!=old: p.write_text(s,encoding='utf-8')
           PY
       - name: Commit fixes
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          if ! git diff --cached --quiet; then git commit -m 'Restore internal page styling'; git push; fi
+          if ! git diff --cached --quiet; then git commit -m 'Rebuild internal pages to match homepage'; git push; fi
