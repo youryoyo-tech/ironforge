@@ -1,0 +1,47 @@
+name: Fix GitHub Pages paths
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix-paths:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Fix project-site paths
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          prefix='/ironforge'
+          for p in Path('.').rglob('*'):
+              if not p.is_file() or '.git' in p.parts:
+                  continue
+              if p.suffix.lower() not in {'.html','.js','.css','.txt'}:
+                  continue
+              try:
+                  s=p.read_text(encoding='utf-8')
+              except Exception:
+                  continue
+              original=s
+              s=re.sub(r'([\"\'])/assets/', r'\1'+prefix+'/assets/', s)
+              s=s.replace('href="/favicon.ico"', 'href="'+prefix+'/favicon.ico"')
+              for route in ['about','membership','trainers','classes','schedule','gallery','contact','faq']:
+                  s=s.replace(f'href="/{route}', f'href="{prefix}/{route}')
+                  s=s.replace(f"href='/{route}", f"href='{prefix}/{route}")
+              s=s.replace('href="/"', 'href="'+prefix+'/"')
+              if s != original:
+                  p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --quiet || git commit -m 'Fix GitHub Pages project paths'
+          git push
